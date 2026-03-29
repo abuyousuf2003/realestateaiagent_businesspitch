@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Real Estate AI Agent — Automated Lead Qualification</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:    #0f0f0f;
+    --soft:   #f5f3ef;
+    --mid:    #888;
+    --rule:   #e2e0da;
+    --accent: #c8a96e;
+    --white:  #ffffff;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--soft);
+    color: var(--ink);
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ────────────────────────────────────────────────────────── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 22px 60px;
+    background: rgba(245,243,239,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--rule);
+  }
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px; font-weight: 700; letter-spacing: .04em;
+    color: var(--ink);
+  }
+  .nav-cta {
+    font-size: 12px; font-weight: 500; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink);
+    border: 1px solid var(--ink); padding: 10px 24px;
+    text-decoration: none; transition: all .25s;
+  }
+  .nav-cta:hover { background: var(--ink); color: var(--white); }
+
+  /* ── HERO ───────────────────────────────────────────────────────── */
+  .hero {
+    min-height: 100vh;
+    display: grid; grid-template-columns: 1fr 1fr; align-items: center;
+    padding: 140px 60px 80px;
+    gap: 60px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: -200px; right: -200px;
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(200,169,110,.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    font-size: 11px; font-weight: 500; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--accent);
+    display: flex; align-items: center; gap: 12px; margin-bottom: 28px;
+  }
+  .hero-eyebrow::before {
+    content: ''; width: 32px; height: 1px; background: var(--accent);
+  }
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(42px, 5vw, 68px);
+    line-height: 1.08; font-weight: 900;
+    color: var(--ink); margin-bottom: 28px;
+  }
+  .hero-title em { font-style: italic; color: var(--accent); }
+  .hero-body {
+    font-size: 16px; line-height: 1.7; color: #555;
+    max-width: 460px; margin-bottom: 44px;
+  }
+  .hero-actions { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .btn-primary {
+    background: var(--ink); color: var(--white);
+    padding: 16px 36px; font-size: 13px; font-weight: 500;
+    letter-spacing: .06em; text-transform: uppercase;
+    text-decoration: none; transition: all .25s;
+    border: 1px solid var(--ink);
+  }
+  .btn-primary:hover { background: var(--accent); border-color: var(--accent); }
+  .btn-ghost {
+    color: var(--ink); font-size: 13px; font-weight: 500;
+    letter-spacing: .06em; text-transform: uppercase;
+    text-decoration: none; display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid transparent; padding-bottom: 2px;
+    transition: border-color .25s;
+  }
+  .btn-ghost:hover { border-color: var(--ink); }
+
+  /* ── HERO CARD ──────────────────────────────────────────────────── */
+  .hero-card {
+    background: var(--white);
+    border: 1px solid var(--rule);
+    padding: 40px;
+    position: relative;
+    box-shadow: 0 40px 80px rgba(0,0,0,.06);
+    animation: float 6s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+  .card-label {
+    font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--mid); margin-bottom: 20px;
+  }
+  .chat-row {
+    display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px;
+  }
+  .chat-row.agent { flex-direction: row-reverse; }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--ink); color: var(--white);
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .avatar.user { background: #e8e4dc; color: var(--ink); }
+  .bubble {
+    background: var(--soft); border-radius: 2px 12px 12px 12px;
+    padding: 10px 14px; font-size: 12.5px; line-height: 1.5; color: var(--ink);
+    max-width: 260px;
+  }
+  .chat-row.agent .bubble {
+    background: var(--ink); color: var(--white);
+    border-radius: 12px 2px 12px 12px;
+  }
+  .card-divider { border: none; border-top: 1px solid var(--rule); margin: 20px 0; }
+  .card-stat-row { display: flex; justify-content: space-between; }
+  .card-stat { text-align: center; }
+  .card-stat .val {
+    font-family: 'Playfair Display', serif; font-size: 26px;
+    font-weight: 700; color: var(--ink);
+  }
+  .card-stat .lbl { font-size: 10px; color: var(--mid); letter-spacing: .06em; }
+
+  /* ── SECTION BASE ───────────────────────────────────────────────── */
+  section { padding: 100px 60px; }
+  .section-eyebrow {
+    font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--accent); display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px;
+  }
+  .section-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--accent); }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(30px, 3.5vw, 46px); font-weight: 900;
+    line-height: 1.12; color: var(--ink); margin-bottom: 16px;
+  }
+  .section-title em { font-style: italic; color: var(--accent); }
+  .section-sub { font-size: 15px; color: #666; line-height: 1.7; max-width: 540px; }
+
+  /* ── PROBLEM SECTION ────────────────────────────────────────────── */
+  .problem { background: var(--ink); }
+  .problem .section-eyebrow { color: var(--accent); }
+  .problem .section-eyebrow::before { background: var(--accent); }
+  .problem .section-title { color: var(--white); }
+  .problem .section-sub { color: #aaa; }
+
+  .problem-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 1px; background: #222; margin-top: 60px;
+    border: 1px solid #222;
+  }
+  .problem-item {
+    background: #141414; padding: 40px;
+    transition: background .25s;
+  }
+  .problem-item:hover { background: #1a1a1a; }
+  .prob-num {
+    font-family: 'Playfair Display', serif; font-size: 48px;
+    font-weight: 900; color: #222; line-height: 1;
+    margin-bottom: 16px;
+  }
+  .prob-title {
+    font-size: 15px; font-weight: 500; color: var(--white);
+    margin-bottom: 10px;
+  }
+  .prob-body { font-size: 13.5px; color: #888; line-height: 1.65; }
+  .prob-tag {
+    display: inline-block; margin-top: 16px;
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--accent); border: 1px solid #333; padding: 5px 12px;
+  }
+
+  /* ── SCENARIO SECTION ───────────────────────────────────────────── */
+  .scenario { background: var(--white); }
+  .scenario-split {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1px; background: var(--rule); margin-top: 60px;
+    border: 1px solid var(--rule);
+  }
+  .scenario-col { padding: 48px; background: var(--white); }
+  .scenario-col.after { background: var(--soft); }
+  .col-badge {
+    display: inline-block; font-size: 10px; letter-spacing: .14em;
+    text-transform: uppercase; font-weight: 500;
+    padding: 6px 14px; margin-bottom: 28px;
+  }
+  .col-badge.before { background: #ffeaea; color: #c0392b; }
+  .col-badge.after  { background: #eafaf1; color: #1e8449; }
+  .scenario-heading {
+    font-family: 'Playfair Display', serif; font-size: 20px;
+    font-weight: 700; color: var(--ink); margin-bottom: 20px; line-height: 1.3;
+  }
+  .scenario-body { font-size: 14px; line-height: 1.75; color: #555; }
+  .scenario-body strong { color: var(--ink); }
+
+  /* ── WORKFLOW SECTION ───────────────────────────────────────────── */
+  .workflow { background: var(--soft); }
+  .flow-steps {
+    display: flex; gap: 0; margin-top: 60px;
+    position: relative;
+  }
+  .flow-step {
+    flex: 1; padding: 36px 28px; position: relative;
+    border: 1px solid var(--rule); margin-left: -1px;
+    background: var(--white); transition: all .3s;
+    cursor: default;
+  }
+  .flow-step:first-child { margin-left: 0; }
+  .flow-step:hover { z-index: 2; box-shadow: 0 20px 50px rgba(0,0,0,.08); transform: translateY(-4px); }
+  .flow-num {
+    font-family: 'Playfair Display', serif; font-size: 36px;
+    font-weight: 900; color: var(--rule); line-height: 1; margin-bottom: 20px;
+  }
+  .flow-title { font-size: 13px; font-weight: 500; color: var(--ink); margin-bottom: 8px; }
+  .flow-body  { font-size: 12px; color: var(--mid); line-height: 1.6; }
+  .flow-icon  { font-size: 22px; margin-bottom: 14px; }
+
+  /* Channels row */
+  .channels-row {
+    display: flex; gap: 12px; margin-top: 40px; flex-wrap: wrap;
+  }
+  .channel-pill {
+    display: flex; align-items: center; gap: 8px;
+    border: 1px solid var(--rule); padding: 10px 20px;
+    font-size: 12px; font-weight: 500; background: var(--white);
+    color: var(--ink);
+  }
+  .channel-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+  }
+
+  /* ── FEATURES GRID ──────────────────────────────────────────────── */
+  .features { background: var(--white); }
+  .feat-grid {
+    display: grid; grid-template-columns: repeat(4,1fr);
+    gap: 1px; background: var(--rule);
+    border: 1px solid var(--rule); margin-top: 60px;
+  }
+  .feat-item {
+    background: var(--white); padding: 36px 28px;
+    transition: background .2s;
+  }
+  .feat-item:hover { background: var(--soft); }
+  .feat-icon { font-size: 20px; margin-bottom: 16px; }
+  .feat-title { font-size: 13px; font-weight: 500; color: var(--ink); margin-bottom: 8px; }
+  .feat-body  { font-size: 12px; color: var(--mid); line-height: 1.6; }
+
+  /* ── PRICING ────────────────────────────────────────────────────── */
+  .pricing { background: var(--soft); }
+  .price-card-wrap {
+    display: grid; grid-template-columns: 1.1fr .9fr;
+    gap: 32px; margin-top: 60px; align-items: start;
+  }
+  .price-card {
+    background: var(--ink); color: var(--white);
+    padding: 56px 48px;
+    box-shadow: 0 40px 80px rgba(0,0,0,.12);
+  }
+  .price-label {
+    font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 32px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .price-label::before { content: ''; width: 24px; height: 1px; background: var(--accent); }
+  .price-amount {
+    font-family: 'Playfair Display', serif; font-size: 72px;
+    font-weight: 900; line-height: 1; color: var(--white);
+  }
+  .price-amount span { font-size: 28px; vertical-align: super; color: var(--accent); }
+  .price-type {
+    font-size: 12px; letter-spacing: .1em; color: #666;
+    text-transform: uppercase; margin-top: 8px; margin-bottom: 40px;
+  }
+  .price-stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 24px; border-top: 1px solid #222; padding-top: 32px;
+    margin-bottom: 40px;
+  }
+  .pstat-val {
+    font-family: 'Playfair Display', serif; font-size: 28px;
+    font-weight: 700; color: var(--white);
+  }
+  .pstat-lbl { font-size: 11px; color: #666; margin-top: 4px; }
+  .price-cta {
+    display: block; text-align: center;
+    background: var(--accent); color: var(--white);
+    padding: 18px; font-size: 12px; letter-spacing: .1em;
+    text-transform: uppercase; font-weight: 500;
+    text-decoration: none; transition: opacity .25s;
+  }
+  .price-cta:hover { opacity: .85; }
+
+  .includes-card {
+    background: var(--white); border: 1px solid var(--rule); padding: 40px;
+  }
+  .includes-title {
+    font-size: 13px; font-weight: 500; color: var(--ink);
+    margin-bottom: 24px; text-transform: uppercase; letter-spacing: .08em;
+  }
+  .include-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--rule);
+    font-size: 13px; color: #444; line-height: 1.5;
+  }
+  .include-item:last-child { border-bottom: none; }
+  .include-check { color: var(--accent); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .price-note {
+    font-size: 11px; color: var(--mid); margin-top: 24px; line-height: 1.6;
+    padding-top: 16px; border-top: 1px solid var(--rule);
+  }
+
+  /* ── FOOTER ─────────────────────────────────────────────────────── */
+  footer {
+    background: var(--ink); color: #888;
+    padding: 60px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-brand {
+    font-family: 'Playfair Display', serif; font-size: 18px;
+    font-weight: 700; color: var(--white);
+  }
+  .footer-note { font-size: 12px; }
+
+  /* ── ANIMATIONS ─────────────────────────────────────────────────── */
+  .reveal {
+    opacity: 0; transform: translateY(30px);
+    transition: opacity .7s ease, transform .7s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ── RESPONSIVE ─────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    nav { padding: 18px 24px; }
+    .hero { grid-template-columns: 1fr; padding: 120px 24px 60px; }
+    .hero-card { display: none; }
+    section { padding: 70px 24px; }
+    .problem-grid, .scenario-split { grid-template-columns: 1fr; }
+    .flow-steps { flex-direction: column; }
+    .flow-step { margin-left: 0; margin-top: -1px; }
+    .feat-grid { grid-template-columns: repeat(2,1fr); }
+    .price-card-wrap { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 16px; text-align: center; padding: 40px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Real Estate AI Agent</div>
+  <a href="#pricing" class="nav-cta">Get Started</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <div class="hero-eyebrow">AI-Powered Lead Qualification</div>
+    <h1 class="hero-title">Your leads<br/>don't wait.<br/><em>Neither should you.</em></h1>
+    <p class="hero-body">
+      An intelligent AI assistant that qualifies buyers and sellers on WhatsApp, Facebook Messenger and Instagram DM — 24/7, automatically. No missed leads. No manual follow-up. Just booked appointments.
+    </p>
+    <div class="hero-actions">
+      <a href="#pricing" class="btn-primary">See Pricing</a>
+      <a href="#how" class="btn-ghost">See how it works →</a>
+    </div>
+  </div>
+
+  <div class="hero-card reveal">
+    <div class="card-label">Live conversation — 11:43 pm</div>
+    <div class="chat-row">
+      <div class="avatar user">JM</div>
+      <div class="bubble">Hi, I'm looking for a 3-bed in Coral Gables, around $650k</div>
+    </div>
+    <div class="chat-row agent">
+      <div class="avatar">AI</div>
+      <div class="bubble">Hi! I'm Sarah 👋 I work with Dementry. What's your full name and have you been pre-approved for financing?</div>
+    </div>
+    <div class="chat-row">
+      <div class="avatar user">JM</div>
+      <div class="bubble">James Miller — yes, pre-approved up to $700k</div>
+    </div>
+    <div class="chat-row agent">
+      <div class="avatar">AI</div>
+      <div class="bubble">Perfect James! I found 2 matching listings. Dementry has Thursday 10am or Friday 2pm free. Which works?</div>
+    </div>
+    <hr class="card-divider"/>
+    <div class="card-stat-row">
+      <div class="card-stat"><div class="val">85</div><div class="lbl">Lead Score</div></div>
+      <div class="card-stat"><div class="val">🔴</div><div class="lbl">Hot Lead</div></div>
+      <div class="card-stat"><div class="val">47s</div><div class="lbl">Response Time</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="problem" id="problem">
+  <div class="section-eyebrow">The Problem</div>
+  <h2 class="section-title">Where deals are<br/><em>lost every day</em></h2>
+  <p class="section-sub">Most real estate agents lose high-quality leads not because they're bad at their job — but because of what happens between the first message and the first meeting.</p>
+
+  <div class="problem-grid reveal">
+    <div class="problem-item">
+      <div class="prob-num">01</div>
+      <div class="prob-title">Slow Response Time</div>
+      <div class="prob-body">A buyer messages at 9 pm on Saturday. Your phone is off. By Monday morning they've already booked a viewing with the agent who replied first. Speed wins — every time.</div>
+      <div class="prob-tag">Avg. lead response: 17 hours</div>
+    </div>
+    <div class="problem-item">
+      <div class="prob-num">02</div>
+      <div class="prob-title">Unqualified Showings</div>
+      <div class="prob-body">You spend two hours showing a property to someone who can't get financing, isn't pre-approved, or was just curious. Time is your most limited resource.</div>
+      <div class="prob-tag">40% of showings don't convert</div>
+    </div>
+    <div class="problem-item">
+      <div class="prob-num">03</div>
+      <div class="prob-title">Missed Follow-Ups</div>
+      <div class="prob-body">A warm lead goes cold because no one sent a follow-up. That $500k deal didn't fall through because of price — it fell through because of silence.</div>
+      <div class="prob-tag">Most leads need 5+ touchpoints</div>
+    </div>
+    <div class="problem-item">
+      <div class="prob-num">04</div>
+      <div class="prob-title">Zero Lead Intelligence</div>
+      <div class="prob-body">Every conversation lives in someone's WhatsApp inbox. Nothing is logged, nothing is tracked, and nothing can be improved. You can't grow what you can't measure.</div>
+      <div class="prob-tag">No CRM = no pipeline visibility</div>
+    </div>
+  </div>
+</section>
+
+<!-- SCENARIO -->
+<section class="scenario" id="scenario">
+  <div class="section-eyebrow">Before vs. After</div>
+  <h2 class="section-title">A real scenario,<br/><em>two very different outcomes</em></h2>
+  <p class="section-sub">Same lead. Same property. Same night. The only difference is whether you have an AI agent working for you.</p>
+
+  <div class="scenario-split reveal">
+    <div class="scenario-col">
+      <span class="col-badge before">Without AI Agent</span>
+      <div class="scenario-heading">A buyer messages at 10:47 pm asking about a listing in Coral Gables.</div>
+      <p class="scenario-body">
+        The agent is offline. The message sits unread. By <strong>8 am the next morning</strong>, the buyer has already spoken to two other agents — one of whom replied at 11 pm and booked a viewing for Tuesday.<br/><br/>
+        Your lead is gone. Not because of price. Not because of the property. Because of a <strong>10-hour silence.</strong>
+      </p>
+    </div>
+    <div class="scenario-col after">
+      <span class="col-badge after">With AI Agent</span>
+      <div class="scenario-heading">Sarah replies in 47 seconds. The buyer is qualified, scored and booked before midnight.</div>
+      <p class="scenario-body">
+        Sarah greets the buyer, collects their name, confirms budget and pre-approval, searches the live listings database and presents two matching properties. She checks the agent's calendar and offers available slots.<br/><br/>
+        By the time the agent wakes up, the appointment is in Google Calendar, the lead is logged in Airtable with a score of <strong>85 / 100</strong>, and a full briefing email has already been sent to their inbox.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="workflow" id="how">
+  <div class="section-eyebrow">How It Works</div>
+  <h2 class="section-title">Five steps.<br/><em>Fully automated.</em></h2>
+
+  <div class="channels-row">
+    <div class="channel-pill"><div class="channel-dot" style="background:#25D366"></div>WhatsApp</div>
+    <div class="channel-pill"><div class="channel-dot" style="background:#0866FF"></div>Facebook Messenger</div>
+    <div class="channel-pill"><div class="channel-dot" style="background:#E1306C"></div>Instagram DM</div>
+  </div>
+
+  <div class="flow-steps reveal">
+    <div class="flow-step">
+      <div class="flow-num">01</div>
+      <div class="flow-icon">💬</div>
+      <div class="flow-title">Lead Messages</div>
+      <div class="flow-body">Buyer or seller sends a message on any channel. Sarah responds within seconds, 24/7.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">02</div>
+      <div class="flow-icon">🎯</div>
+      <div class="flow-title">Qualify & Score</div>
+      <div class="flow-body">Sarah collects name, budget, timeline, pre-approval status and transaction type through natural conversation.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">03</div>
+      <div class="flow-icon">🏠</div>
+      <div class="flow-title">Search Listings</div>
+      <div class="flow-body">Queries your live Airtable property database in real time and presents the best matches instantly.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">04</div>
+      <div class="flow-icon">📅</div>
+      <div class="flow-title">Book Appointment</div>
+      <div class="flow-body">Checks Google Calendar, offers real available slots, creates the event and sends a calendar invite by email.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">05</div>
+      <div class="flow-icon">📋</div>
+      <div class="flow-title">Brief the Agent</div>
+      <div class="flow-body">Full lead profile logged to CRM. Detailed AI analysis emailed to the agent — name, score, motivation, next steps.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-eyebrow">Capabilities</div>
+  <h2 class="section-title">Everything built in.<br/><em>Nothing left to chance.</em></h2>
+
+  <div class="feat-grid reveal">
+    <div class="feat-item">
+      <div class="feat-icon">🤖</div>
+      <div class="feat-title">AI Lead Qualification</div>
+      <div class="feat-body">Separate intelligent flows for buyers, sellers and simultaneous transactions. Every question asked in the right order.</div>
+    </div>
+    <div class="feat-item">
+      <div class="feat-icon">📊</div>
+      <div class="feat-title">Smart Lead Scoring</div>
+      <div class="feat-body">Every lead gets a 0–100 score and a Hot / Warm / Nurture priority flag so agents know exactly who to call first.</div>
+    </div>
+    <div class="feat-item">
+      <div class="feat-icon">🔍</div>
+      <div class="feat-title">Live Property Search</div>
+      <div class="feat-body">Connected directly to your Airtable property database. Real results, real prices, presented in the conversation.</div>
+    </div>
+    <div class="feat-item">
+      <div class="feat-icon">🗂️</div>
+      <div class="feat-title">Auto CRM Logging</div>
+      <div class="feat-body">Every lead profile — name, contact, budget, notes, appointment — written to Airtable automatically.</div>
+    </div>
+    <div class="feat-item">
+      <div class="feat-icon">🧠</div>
+      <div class="feat-title">Objection Handling</div>
+      <div class="feat-body">A Pinecone-powered knowledge base equips the agent to handle price, commission and market concerns with confidence.</div>
+    </div>
+    <div class="feat-item">
+      <div class="feat-icon">📬</div>
+      <div class="feat-title">Agent Briefing Emails</div>
+      <div class="feat-body">When a conversation closes, a full AI-generated analysis is emailed to the agent. No manual notes, ever.</div>
+    </div>
+    <div class="feat-item">
+      <div class="feat-icon">🔄</div>
+      <div class="feat-title">Persistent Memory</div>
+      <div class="feat-body">Redis memory ensures Sarah never forgets what was said earlier. Conversations feel natural, not repetitive.</div>
+    </div>
+    <div class="feat-item">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">Powered by Gemini + n8n</div>
+      <div class="feat-body">Built on Google Gemini's language model and n8n automation — fast, reliable and production-ready infrastructure.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="section-eyebrow">Investment</div>
+  <h2 class="section-title">One flat price.<br/><em>No surprises.</em></h2>
+  <p class="section-sub">A complete, production-ready AI agent system built, configured and delivered in under two weeks.</p>
+
+  <div class="price-card-wrap reveal">
+    <div class="price-card">
+      <div class="price-label">Complete Project</div>
+      <div class="price-amount"><span>$</span>1,200</div>
+      <div class="price-type">One-time · All-inclusive</div>
+      <div class="price-stats">
+        <div>
+          <div class="pstat-val">12–15</div>
+          <div class="pstat-lbl">Days to deliver</div>
+        </div>
+        <div>
+          <div class="pstat-val">10</div>
+          <div class="pstat-lbl">Days post-launch support</div>
+        </div>
+      </div>
+      <a href="#" class="price-cta">Book a Free Demo Call</a>
+    </div>
+
+    <div>
+      <div class="includes-card">
+        <div class="includes-title">Everything Included</div>
+        <div class="include-item"><span class="include-check">✓</span>Full n8n workflow build and configuration</div>
+        <div class="include-item"><span class="include-check">✓</span>AI agent persona and prompt engineering</div>
+        <div class="include-item"><span class="include-check">✓</span>WhatsApp, Facebook Messenger &amp; Instagram DM integration</div>
+        <div class="include-item"><span class="include-check">✓</span>Live property database connection (Airtable)</div>
+        <div class="include-item"><span class="include-check">✓</span>Google Calendar scheduling + Gmail invites</div>
+        <div class="include-item"><span class="include-check">✓</span>Lead scoring logic and CRM auto-logging</div>
+        <div class="include-item"><span class="include-check">✓</span>Knowledge base setup (Pinecone + Gemini)</div>
+        <div class="include-item"><span class="include-check">✓</span>10 days of post-launch support and bug fixes</div>
+        <div class="price-note">* API usage costs — WhatsApp Business, Google Calendar, Gemini — are billed at cost by the respective providers and are not included in the project fee.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">Real Estate AI Agent</div>
+  <div class="footer-note">Confidential — prepared exclusively for your review</div>
+</footer>
+
+<script>
+  // Reveal on scroll
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => observer.observe(el));
+
+  // Stagger children inside revealed elements
+  document.querySelectorAll('.problem-grid, .feat-grid').forEach(grid => {
+    const children = grid.querySelectorAll('.problem-item, .feat-item');
+    children.forEach((child, i) => {
+      child.style.transitionDelay = `${i * 60}ms`;
+    });
+  });
+</script>
+</body>
+</html>
